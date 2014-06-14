@@ -1,0 +1,27 @@
+function scenaOUTRO() {
+	echo
+	echo "Zegnaj!"
+	echo
+	exit
+}
+
+function scenaINTRO() {
+	T="A wiec siedzisz w tawernie..."
+
+	O+=("Idz do domu")
+	K+=("scena1")
+	O+=("Idz do szkoly")
+	K+=("scena2")	
+}
+
+function scena1() {
+	T="W domu nudy."
+	O+=("Wroc do tawerny")
+	K+=("scenaINTRO")
+}
+
+function scena2() {
+	T="Nie ma szkoly."
+	O+=("Wroc do tawerny")
+	K+=("scenaINTRO")
+}
