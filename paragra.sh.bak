@@ -4,6 +4,7 @@
 # skryptu .tok moze spowodowac nieodwracalne szkody. Korzystac WYLACZNIE ze skryptow .tok
 # pochodzacych z zaufanego zrodla.
 
+# laduje skrypt znajdujacy sie w pliku .tok
 loadTOK() 
 {
 	# znajduje sciezke wszystkich plikow .tok i wycina wszystko poza nazwa pliku
@@ -37,7 +38,7 @@ loadTOK()
 
 
 czyPowtorzenie() 
-{ 
+{
 	for (( i=0; i<${#zapisane[*]}; i++ ))
 	do
 		wycietaNazwa="$(echo "${zapisane[i]}" | cut -d'_' -f3)"
@@ -63,39 +64,27 @@ zapisGry()
 			echo "${zapisane[i]}"
 		done
 	fi
-	# pyta usera o nazwe pliku az nie uzyska poprawnej lub user zrezygnuje
+	# pyta uzytkownika o nazwe pliku az nie uzyska poprawnej lub zrezygnuje
 	while [ true ]
 	do
 		echo -e "\nNazwij plik zapisu: "
 		read nazwaZapisu
-		# skopana logika tutaj
-		# brakowalo ifa sprawdzajacego czy przypadkiem nie ma 0 save'ow
-		# ale i tak to jest do poprawienia
-		if [ ${#zapisane[*]} -gt 0 ]; then
-			for (( i=0; i<${#zapisane[*]}; i++ ))
-			do
-				wycietaNazwa=($(echo "${zapisane[i]}" | cut -d'_' -f3))
-				echo ""$wycietaNazwa" "$nazwaZapisu""
-				if [ "$wycietaNazwa" = "$nazwaZapisu" ]; then
-					echo "Taki plik juz istnieje. Nadpisac?"
-					select opt in OK Anuluj
-					do
-						case $opt in
-							"OK") 	
-								nadpisOk=1
-								break
-						esac
-					done
-					break
-				fi
-			done
-			if [ "$nadpisOk" = 1 ]; then
-				unset nadpisOk
+		# O CO Z TYM KURRRRWA CHODZI DLACZEGO TO NIE DZIALA
+		for (( i=0; i<${#zapisane[*]}; i++ ))
+		do
+			wycietaNazwa="$(echo "${zapisane[i]}" | cut -d'_' -f3})"
+			echo ""$wycietaNazwa" "$nazwaZapisu""
+			if [ "$wycietaNazwa" = "$nazwaZapisu" ]; then
+				echo "Taki plik juz istnieje. Nadpisac?"
+				select opt in OK Anuluj
+				do
+					case $opt in
+						"OK") break
+					esac
+				done
 				break
 			fi
-		else
-			break
-		fi
+		done
 	done
 	dataZapisu="$(date +"%Y-%m-%d_%T")"
 	nazwaZapisu=""$dataZapisu"_"${nazwaZapisu}""
@@ -109,9 +98,9 @@ zapisGry()
 	echo -e "\nZapisano pomyslnie!\n"
 }
 
-scenaMENU() 
+scenaOPCJE() 
 {
-	T="[Menu]"
+	T="[Opcje]"
 	O+=("Powrot do gry")
 	K+=("")
 	O+=("Stan postaci")
@@ -126,19 +115,17 @@ scenaMENU()
 
 gameLoop() 
 {
-	# wyswietla tekst sceny
 	echo "$T"
 	echo
-	# jezeli user nie znajduje sie w menu to daje mu taka opcje
-	if [ "$T" != "[Menu]" ]; then
-		O+=("Menu")
-		K+=("scenaMENU")
+	if [ "$T" != "[Opcje]" ]; then
+		O+=("Opcje")
+		K+=("scenaOPCJE")
 	fi
 	PS3="Twoj wybor: "
 	select opt in "${O[@]}";
 	do
 		if [ "$REPLY" -le "${#O[@]}" ]; then
-			if [ ${K[$(($REPLY-1))]} = "scenaMENU" ]; then
+			if [ ${K[$(($REPLY-1))]} = "scenaOPCJE" ]; then
 				wstrzymanaScena=${K[$(($REPLY-1))]}
 			fi
 			nowaScena=${K[$(($REPLY-1))]}
@@ -148,7 +135,6 @@ gameLoop()
 			$nowaScena
 			break
 		else
-			# user dal nierozpoznany input
 			echo "co?"	
 		fi
 	done
