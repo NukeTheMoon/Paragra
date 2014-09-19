@@ -63,40 +63,35 @@ zapisGry()
 			echo "${zapisane[i]}"
 		done
 	fi
-	# pyta usera o nazwe pliku az nie uzyska poprawnej lub user zrezygnuje
-	while [ true ]
-	do
-		echo -e "\nNazwij plik zapisu: "
-		read nazwaZapisu
-		# skopana logika tutaj
-		# brakowalo ifa sprawdzajacego czy przypadkiem nie ma 0 save'ow
-		# ale i tak to jest do poprawienia
-		if [ ${#zapisane[*]} -gt 0 ]; then
-			for (( i=0; i<${#zapisane[*]}; i++ ))
-			do
-				wycietaNazwa=($(echo "${zapisane[i]}" | cut -d'_' -f3))
-				echo ""$wycietaNazwa" "$nazwaZapisu""
-				if [ "$wycietaNazwa" = "$nazwaZapisu" ]; then
-					echo "Taki plik juz istnieje. Nadpisac?"
-					select opt in OK Anuluj
-					do
-						case $opt in
-							"OK") 	
-								nadpisOk=1
-								break
-						esac
-					done
-					break
-				fi
-			done
-			if [ "$nadpisOk" = 1 ]; then
-				unset nadpisOk
-				break
+	echo -e "\nNazwij plik zapisu: "
+	read nazwaZapisu
+	# skopana logika tutaj
+	# brakowalo ifa sprawdzajacego czy przypadkiem nie ma 0 save'ow
+	# ale i tak to jest do poprawienia
+	if [ ${#zapisane[*]} -gt 0 ]; then
+		for (( i=0; i<${#zapisane[*]}; i++ ))
+		do
+			wycietaNazwa=($(echo "${zapisane[i]}" | cut -d'_' -f3))
+			if [ "$wycietaNazwa" = "$nazwaZapisu" ]; then
+				echo "Taki plik juz istnieje. Nadpisac?"
+				select opt in OK Anuluj
+				do
+					case $opt in
+						"OK") 	
+							nadpisOk=1
+							break
+					esac
+				done
+			break
 			fi
-		else
+		done
+		if [ "$nadpisOk" = 1 ]; then
+			unset nadpisOk
 			break
 		fi
-	done
+	else
+		break
+	fi
 	dataZapisu="$(date +"%Y-%m-%d_%T")"
 	nazwaZapisu=""$dataZapisu"_"${nazwaZapisu}""
 	#nazwaZapisu=$(echo "$nazwaZapisu" | tr '\n' ' ')
@@ -107,13 +102,15 @@ zapisGry()
 	#echo "$tokVars
 	grep -vxFe "$tokVars" <<<"$( set -o posix ; set )"| grep -v ^tokVars= > ./saves/"$nazwaZapisu"
 	echo -e "\nZapisano pomyslnie!\n"
+	scenaWstrzymana
 }
 
 scenaMENU() 
 {
+	wMenu=true
 	T="[Menu]"
 	O+=("Powrot do gry")
-	K+=("")
+	K+=("scenaWstrzymana")
 	O+=("Stan postaci")
 	K+=("")
 	O+=("Zapisz gre")
@@ -122,6 +119,12 @@ scenaMENU()
 	K+=("")
 	O+=("Wyjdz z gry")
 	K+=("scenaOUTRO")
+}
+
+scenaWstrzymana()
+{
+	wMenu=false
+	$wstrzymanaKonsekwencja
 }
 
 gameLoop() 
@@ -138,8 +141,9 @@ gameLoop()
 	select opt in "${O[@]}";
 	do
 		if [ "$REPLY" -le "${#O[@]}" ]; then
-			if [ ${K[$(($REPLY-1))]} = "scenaMENU" ]; then
-				wstrzymanaScena=${K[$(($REPLY-1))]}
+			if [ "${K[$(($REPLY-1))]}" != "scenaMENU" ] && [ "$wMenu" = false ]; then
+				echo "debug: wchodze w if"
+				wstrzymanaKonsekwencja=${K[$(($REPLY-1))]}
 			fi
 			nowaScena=${K[$(($REPLY-1))]}
 			unset T
@@ -162,6 +166,7 @@ scenaINTRO
 
 clear
 sleep 1
+wMenu=false
 
 while [ true ]
 do
