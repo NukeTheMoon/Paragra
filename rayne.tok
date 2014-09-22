@@ -1,0 +1,165 @@
+function scenaOUTRO() {
+	echo "Zegnaj!"
+	exit
+}
+
+function scenaOUTRO4d() {
+	T="Twoi rodzice nie zyja."
+	O+=("Koniec gry.")
+	K+=("scenaOUTRO")
+}
+
+function scenaOUTRO6d() {
+	T="Powraca Ci pamiec. Uswiadamiasz sobie, ze Twoje zycie zmieni sie 
+	na zawsze..."
+	O+=("Koniec gry.")
+	K+=("scenaOUTRO")
+}
+
+function scenaINTRO() {
+	T="Intro."
+	maMlotek=false
+	punktyZycia=3
+	wyszedles4d=false
+	O+=("Budzisz sie")
+	K+=("scena1a")
+}
+
+function scena1a() {
+	T="Wokol jest ciemno"
+	O+=("Bierzesz oddech")
+	K+=("scenamaMlotek")
+	O+=("Probujesz wstac")
+	K+=("scenaminusZycieWstawanie")
+	O+=("Wyciagasz reke")
+	K+=("scena2a")
+}
+
+function scenamaMlotek() {
+	T="Znalazles mlotek."
+	maMlotek=true
+	O+=("Dalej ->")
+	K+=("scena1a")
+}
+
+function scenaminusZycieWstawanie() {
+	((punktyZycia--))
+	T="Tracisz punkt zycia. Pozostale punkty zycia: ($punktyZycia)"
+	O+=("Dalej ->")
+	K+=("scena1a")
+}
+function scenaminusZycieReka() {
+	((punktyZycia--))
+	T="Tracisz punkt zycia. Pozostale punkty zycia: ($punktyZycia)"
+	O+=("Dalej ->")
+	K+=("scena3d")
+}
+
+function scena3d() {
+	T="Powinienes wrocic do domu"
+	O+=("Wroc do domu")
+	K+=("scena4d")
+}
+
+function scena2a() {
+	T="Pod palcami czujesz chropowatą powierzchnie. Deski.
+	Nie zdolalaes nawet wyprostowac reki.
+	Podnosisz je i niepewnie wychodzisz na zewnatrz.
+	Nie wiesz, jak sie tam znalazles i dlaczego.
+	Otrzasasz buty z blota i idziesz..."
+	O+=("W prawo.")
+	K+=("scena3c")
+	O+=("W lewo.")
+	K+=("scena4c")
+	O+=("Prosto")
+	K+=("scena5a")
+
+}
+
+function scena3c() {
+	T="Przewracasz sie... o czyjas dlon. Nie widzisz jednak reszty postaci..."
+	O+=("Zle sie czujesz. Zakrecilo Ci sie w glowie.")
+	K+=("scenaminusZycieReka")
+}
+
+function scena4d() {
+	T="W domu panuje cisza. Drzwi i okna sa rozwalone."
+	O+=("Idziesz do sypialni rodzicow")
+	K+=("wyszedles4dtrue")
+}	
+
+function wyszedles4dtrue {
+	T="Z trudem otwierasz drzwi, jakby cos je blokowalo."
+	wyszedles4d=true
+	O+=("Popychasz drzw mocniej")
+	K+=("scenaOUTRO4d")
+}
+
+function scena4c() {
+	T="Znajdujesz 100 PLN lezace na ulicy"
+	O+=("Dalej ->")
+	K+=("scena3d")
+}
+
+function scena5a() {
+	T="Spotykasz przyjaciela.
+	Rozmawiacie.
+	Przyjaciel wyznaje Ci, ze dziwne rzeczy dzieja sie teraz...
+	Ludzie choruja i nie wychodza z domow.
+	Masz ochote wyznac przyjacielowi, co Ci sie przytrafilo rano,
+	ale nic juz nie pamietasz... Co ja wlasciwie robilem rano?
+	Przypominasz sobie tylko, ze Twoi rodzice tez ostatnio chorowali..."
+	O+=("Wracacie wspolnie do Ciebie")
+	K+=("scena5b")
+	O+=("Postanawiasz najpierw isc do przyjaciela")
+	K+=("scena6b")
+}
+
+function scena5b() {
+	T="Znajdujesz rodzicow w zlym stanie. Maja wysoka goraczke."
+	O+=("Bezzwlocznie jedziecie do szpitala.")
+	K+=("scena5c")	
+	O+=("Dzwonicie na pogotowie.")
+	K+=("scena5d")
+	O+=("Pomagasz im samodzielnie, w koncu jestes na medycynie.")
+	K+=("scena5e")
+}
+
+function scena5d() {
+	T="Telefony stracily zasieg, w domowych slychac tylko piski.
+	Nie dzialaja nawet numery alarmowe"
+	O+=("Dalej ->")
+	K+=("scena5b")
+}
+
+function scena5e() {
+	T="Rozkladasz aparature po zmarlej babci./n
+	Mierzysz rodzicom cisnienie, podajesz kroplowke na zbicie goraczki.
+	Slyszysz dzwonek do drzwi"
+	O+=("Gdy tylko konczysz, idziesz otworzyc")
+	K+=("scena5f")
+	O+=("Wygladasz przez okno zeby sprawdzic, kto to.")
+	K+=("scenaOUTRO")
+}
+
+function scena6b() {
+	T="W domu pusto. W pokoju slychac wlaczony telewizor."
+	O+=("Idziecie do pokoju")
+	K+=("scena6c")
+}
+
+function scena6c() {
+	T="Nikogo nie ma."
+	O+=("Odsluchaj wiadomosci.")
+	K+=("scena6d")
+}
+
+function scena6d() {
+	T="WIADOMOSCI.\n Na ulicach w Warszawie panuje chaos.
+	Szpitale sa przepelnione.
+	Tracimy polaczenia radiowe z innymi miastami oraz z niektorymi panstwami.
+	DOPOKI JESTES W STANIE NAS OGLADAC:
+	RATUJ SIE: PRZYJEDZ NA MIEJSCE ZBIORKI W WARSZAWIE. PRZY STADIONIE."
+	O+=("Wylacz telewizor.")
+	K+=("scenaOUTRO6d")
+}
