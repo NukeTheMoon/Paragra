@@ -1,9 +1,5 @@
 #!/bin/bash
 
-# UWAGA: Kod jest niesanitarny. Zaladowanie falszywego lub niepoprawnie skonstruowanego
-# skryptu .tok moze spowodowac nieodwracalne szkody. Korzystac WYLACZNIE ze skryptow .tok
-# pochodzacych z zaufanego zrodla.
-
 loadTOK() 
 {
 	# znajduje sciezke wszystkich plikow .tok i wycina wszystko poza nazwa pliku
@@ -16,7 +12,9 @@ loadTOK()
 		select file in "${toks[@]}";
 		do
 			if [ "$REPLY" -le "${#toks[@]}" ]; then
-				source ${toks[$(($REPLY-1))]}
+				wybranyTok=${toks[$(($REPLY-1))]}
+				chmod +x $wybranyTok
+				source $wybranyTok
 				break
 			else	
 				echo "Niepoprawny plik. "
@@ -35,74 +33,96 @@ loadTOK()
 	fi
 }
 
-
-czyPowtorzenie() 
-{ 
-	for (( i=0; i<${#zapisane[*]}; i++ ))
-	do
-		wycietaNazwa="$(echo "${zapisane[i]}" | cut -d'_' -f3)"
-		echo ""$wycietaNazwa" "$nazwaZapisu""
-		if [ "$wycietaNazwa" = "$nazwaZapisu" ]; then
-			# nazwa pliku zapisu jest unikalna
-			return 0
-		fi
-	done
-	# w folderze istnieje juz plik zapisu o takiej nazwie
-	return 1
-}
-
 zapisGry() 
 {
 	# tworzy liste sciezek plikow .sav i wycina z nich wszystko poza sama nazwa pliku
-	zapisane=($(find ./saves -name "*.sav" | sort -k1 -r | rev | cut -d'/' -f1 | rev | cut -d'.' -f1))
+	if [ ! -d "./saves" ]; then
+		mkdir saves
+	fi
+	zapisaneNazwy=($(find ./saves -name "*.sav" | rev | cut -d'/' -f1 | rev | cut -d'.' -f1))
+	zapisane=($(find ./saves -name "*.sav"))
 	if [ ${#zapisane[*]} -gt 0 ]; then
 		# znaleziono przynajmniej jeden .sav
-		echo -e "\nZapisane gry:\n"
 		for (( i=0; i<${#zapisane[*]}; i++ ))
 		do
-			echo "${zapisane[i]}"
+			zawartoscWybranyTok=`grep -m 1 '^wybranyTok' "${zapisane[i]}" | cut -d'=' -f2`
+			zawartoscDataZapisu=`grep -m 1 '^dataZapisu' "${zapisane[i]}" | cut -d'=' -f2 | tr -d \'`
+			zapisaneSzczegoly+="\n["$zawartoscDataZapisu"] ["$zawartoscWybranyTok"] "${zapisaneNazwy[i]}""
+			unset zawartoscWybranyTok
+			unset zawartoscDataZapisu
 		done
+		echo -e "\nZapisane gry:"
+		echo -e $zapisaneSzczegoly | sort -k1 -r
+		unset zapisaneSzczegoly
 	fi
 	echo -e "\nNazwij plik zapisu: "
 	read nazwaZapisu
-	# skopana logika tutaj
-	# brakowalo ifa sprawdzajacego czy przypadkiem nie ma 0 save'ow
-	# ale i tak to jest do poprawienia
 	if [ ${#zapisane[*]} -gt 0 ]; then
-		for (( i=0; i<${#zapisane[*]}; i++ ))
-		do
-			wycietaNazwa=($(echo "${zapisane[i]}" | cut -d'_' -f3))
-			if [ "$wycietaNazwa" = "$nazwaZapisu" ]; then
-				echo "Taki plik juz istnieje. Nadpisac?"
-				select opt in OK Anuluj
-				do
-					case $opt in
-						"OK") 	
-							nadpisOk=1
-							break
-					esac
-				done
-			break
-			fi
-		done
-		if [ "$nadpisOk" = 1 ]; then
-			unset nadpisOk
-			break
+		if [ `grep -o $nazwaZapisu <<< ${zapisaneNazwy[*]} | wc -l` -gt 0 ]; then
+			echo -e "\nTaki plik juz istnieje. Nadpisac?"
+			select opt in OK Anuluj
+			do
+				case $opt in
+					"OK" ) 	
+						break
+						;;
+					"Anuluj" )
+						scenaWstrzymana
+						return
+						;;
+				esac
+			done
+		fi
+	fi
+	dataZapisu=$(date +"%Y-%m-%d %T")
+	nazwaZapisu=""$nazwaZapisu".sav" 
+	grep -vxFe "$tokVars" <<<"$( set -o posix ; set )"| grep -v ^tokVars= > ./saves/"$nazwaZapisu"
+	unset dataZapisu
+	unset nazwaZapisu
+	echo -e "\nZapisano pomyslnie!"
+	scenaWstrzymana
+}
+
+wczytanieGry()
+{
+	if [ -d ./saves ]; then
+		zapisane=($(find ./saves -name "*.sav"))
+		zapisaneNazwy=($(find ./saves -name "*sav" | rev | cut -d'/' -f1 | rev | cut -d'.' -f1))
+		if [ ${#zapisane[*]} -gt 0 ]; then
+			for (( i=0; i<${#zapisane[*]}; i++ ))
+			do
+				zawartoscWybranyTok=`grep -m 1 '^wybranyTok' "${zapisane[i]}" | cut -d'=' -f2`
+				zawartoscDataZapisu=`grep -m 1 '^dataZapisu' "${zapisane[i]}" | cut -d'=' -f2 | tr -d \'`
+				zapisaneSzczegoly+="["$zawartoscDataZapisu"] ["$zawartoscWybranyTok"] "${zapisaneNazwy[i]}\n""
+				IFS='\n' read -a zapisaneZbior <<< "$zapisaneSzczegoly"
+				unset zawartoscWybranyTok
+				unset zawartoscDataZapisu
+			done
+			echo -e "\nZapisane gry:\n"
+			PS3="Wybierz stan gry do wczytania lub wpisz 0 aby anulowac: "
+			select opt in "${zapisaneZbior[@]}";
+			do
+				if [ "$REPLY" -le "${#zapisaneZbior[@]}" ] && [ "$REPLY" -gt 0 ]; then
+					chmod +x ${zapisane[$REPLY-1]}
+					source ${zapisane[$REPLY-1]}
+					echo -e "\nWczytano pomyslnie!\n"
+					scenaWstrzymana
+					return
+				elif [ "$REPLY" -eq 0 ]; then
+					scenaWstrzymana
+					return
+				else
+					echo -e "\nNie ma takiego stanu gry.\n"
+				fi 
+			done
+		else
+			echo -e "\nNie znaleziono zadnych zapisanych gier."
+			scenaWstrzymana
 		fi
 	else
-		break
+		echo -e "\nNie znaleziono zadnych zapisanych gier."
+		scenaWstrzymana
 	fi
-	dataZapisu="$(date +"%Y-%m-%d_%T")"
-	nazwaZapisu=""$dataZapisu"_"${nazwaZapisu}""
-	#nazwaZapisu=$(echo "$nazwaZapisu" | tr '\n' ' ')
-	nazwaZapisu+=".sav"
-	#( set -o posix ; set ) > /tmp/tokvars.after
-	#diff /tmp/tokvars.before /tmp/tokvars.after > ./saves/$nazwaZapisu
-	#rm /tmp/tokvars.after
-	#echo "$tokVars
-	grep -vxFe "$tokVars" <<<"$( set -o posix ; set )"| grep -v ^tokVars= > ./saves/"$nazwaZapisu"
-	echo -e "\nZapisano pomyslnie!\n"
-	scenaWstrzymana
 }
 
 scenaMENU() 
@@ -111,12 +131,12 @@ scenaMENU()
 	T="[Menu]"
 	O+=("Powrot do gry")
 	K+=("scenaWstrzymana")
-	O+=("Stan postaci")
+	O+=("$nazwaEkranuGracza")
 	K+=("")
 	O+=("Zapisz gre")
 	K+=("zapisGry")
 	O+=("Wczytaj gre")
-	K+=("")
+	K+=("wczytanieGry")
 	O+=("Wyjdz z gry")
 	K+=("scenaOUTRO")
 }
@@ -130,7 +150,7 @@ scenaWstrzymana()
 gameLoop() 
 {
 	# wyswietla tekst sceny
-	echo "$T"
+	echo -e "$T"
 	echo
 	# jezeli user nie znajduje sie w menu to daje mu taka opcje
 	if [ "$T" != "[Menu]" ]; then
@@ -142,7 +162,6 @@ gameLoop()
 	do
 		if [ "$REPLY" -le "${#O[@]}" ]; then
 			if [ "${K[$(($REPLY-1))]}" != "scenaMENU" ] && [ "$wMenu" = false ]; then
-				echo "debug: wchodze w if"
 				wstrzymanaKonsekwencja=${K[$(($REPLY-1))]}
 			fi
 			nowaScena=${K[$(($REPLY-1))]}
@@ -159,14 +178,18 @@ gameLoop()
 	echo
 }
 
-loadTOK
 tokVars="`set -o posix ; set`"
-#( set -o posix ; set ) > /tmp/tokvars.before
+loadTOK
 scenaINTRO
 
 clear
 sleep 1
+
 wMenu=false
+wstrzymanaKonsekwencja=scenaINTRO
+if [ -z "$nazwaEkranuGracza" ]; then
+	nazwaEkranuGracza="Stan postaci"
+fi
 
 while [ true ]
 do
