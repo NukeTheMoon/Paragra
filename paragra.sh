@@ -47,11 +47,11 @@ zapisGry()
 		do
 			zawartoscWybranyTok=`grep -m 1 '^wybranyTok' "${zapisane[i]}" | cut -d'=' -f2`
 			zawartoscDataZapisu=`grep -m 1 '^dataZapisu' "${zapisane[i]}" | cut -d'=' -f2 | tr -d \'`
-			zapisaneSzczegoly+="\n["$zawartoscDataZapisu"] ["$zawartoscWybranyTok"] "${zapisaneNazwy[i]}""
+			zapisaneSzczegoly+="["$zawartoscDataZapisu"] ["$zawartoscWybranyTok"] "${zapisaneNazwy[i]}"\n"
 			unset zawartoscWybranyTok
 			unset zawartoscDataZapisu
 		done
-		echo -e "\nZapisane gry:"
+		echo -e "\nZapisane gry:\n"
 		echo -e $zapisaneSzczegoly | sort -k1 -r
 		unset zapisaneSzczegoly
 	fi
@@ -93,16 +93,21 @@ wczytanieGry()
 			do
 				zawartoscWybranyTok=`grep -m 1 '^wybranyTok' "${zapisane[i]}" | cut -d'=' -f2`
 				zawartoscDataZapisu=`grep -m 1 '^dataZapisu' "${zapisane[i]}" | cut -d'=' -f2 | tr -d \'`
-				zapisaneSzczegoly+="["$zawartoscDataZapisu"] ["$zawartoscWybranyTok"] "${zapisaneNazwy[i]}\n""
-				IFS='\n' read -a zapisaneZbior <<< "$zapisaneSzczegoly"
+				zapisaneSzczegoly+="["$zawartoscDataZapisu"] ["$zawartoscWybranyTok"] "${zapisaneNazwy[i]}""
+				zapisaneSzczegoly+=';'
+				IFS=';' read -a zapisaneZbior <<< "$zapisaneSzczegoly"
 				unset zawartoscWybranyTok
 				unset zawartoscDataZapisu
 			done
+			unset zapisaneSzczegoly
 			echo -e "\nZapisane gry:\n"
 			PS3="Wybierz stan gry do wczytania lub wpisz 0 aby anulowac: "
 			select opt in "${zapisaneZbior[@]}";
 			do
 				if [ "$REPLY" -le "${#zapisaneZbior[@]}" ] && [ "$REPLY" -gt 0 ]; then
+					wczytanyTok=`grep -m 1 '^wybranyTok' "${zapisane[$REPLY-1]}" | cut -d'=' -f2`
+					chmod +x $wczytanyTok
+					source $wczytanyTok
 					chmod +x ${zapisane[$REPLY-1]}
 					source ${zapisane[$REPLY-1]}
 					echo -e "\nWczytano pomyslnie!\n"
